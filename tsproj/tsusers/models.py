@@ -4,9 +4,10 @@ from django.db import models
 
 
 class TsUser(models.Model):
-    user_name = models.CharField(db_index=True, max_length=100)
+    """usinng the user name as unique and primary key
+    """
+    user_name = models.CharField(max_length=100, primary_key=True, unique=True)
 
-    is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=dt.utcnow())
     updated_at = models.DateTimeField(default=dt.utcnow())
 
