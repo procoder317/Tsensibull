@@ -10,3 +10,7 @@ def request_to_dict(input_request):
     for key in input_request:
         temp_dict[key] = input_request[key]
     return temp_dict
+
+
+def request_choices():
+    return ('POST', 'PUT', 'GET', 'DELETE')

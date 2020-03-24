@@ -25,7 +25,7 @@ SECRET_KEY = ')$&%gfn6c=&(m93%d)b#0bjx+2_-gdh-&8s*l5!17*!a0o+ao='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -155,3 +155,5 @@ PLAN_TABLE = {
         "cost": 900.0
     }
 }
+
+PAYMENTS_URL = "https://dummy-payment-server.herokuapp.com/payment"
