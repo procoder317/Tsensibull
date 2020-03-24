@@ -3,11 +3,10 @@
 import json
 import requests
 
-from datetime import datetime as dt
 from datetime import timedelta
+from django.db.models import Q
 from django.conf import settings
 from rest_framework import serializers as slzs
-from rest_framework.serializers import ValidationError
 
 from tsusers.models import TsUser
 from .models import TsSubscription
@@ -21,11 +20,13 @@ class TsSubscriptionSerializer(slzs.Serializer):
     plan_id = slzs.ChoiceField(choices=tuple(plan for plan in settings.PLAN_TABLE))
     start_date = slzs.DateField()
     request_type = slzs.ChoiceField(choices=request_choices())
+    date = slzs.DateField(required=False)
 
     def validate(self, data):
         ret = super().validate(data)
         if data["request_type"] == "GET":
-            pass
+            if not data.get("user_name"):
+                raise slzs.ValidationError({"user_name": "This Field is required ."})
         return ret
 
     def _make_payment(self, validated_data, amount):
@@ -39,9 +40,9 @@ class TsSubscriptionSerializer(slzs.Serializer):
             if response.status_code == 200:
                 return json.loads(response.text)
             else:
-                raise ValidationError("payment failed")
+                raise slzs.ValidationError("payment failed")
         except Exception:
-            raise ValidationError("payment failed")
+            raise slzs.ValidationError("payment failed")
 
     def create(self, validated_data):
         """used to create a new user
@@ -58,11 +59,11 @@ class TsSubscriptionSerializer(slzs.Serializer):
             # trial can be used only once
             trial_count = TsSubscription.objects.filter(user=user, plan_id="TRIAL").count()
             if validated_data['plan_id'] == "TRIAL" and trial_count == 1:
-                raise ValidationError("Plan already used once")
+                raise slzs.ValidationError("Plan already used once")
 
             # as free plan is already with unlimited validity
             if subscriptions[0].plan_id == validated_data['plan_id'] and validated_data['plan_id'] == "FREE":
-                raise ValidationError("Plan already exists")
+                raise slzs.ValidationError("Plan already exists")
 
             # for all other cases if equal or unequal one can update the subscription
             #  assumtions as per real world usage
@@ -80,13 +81,25 @@ class TsSubscriptionSerializer(slzs.Serializer):
             "plan_id": validated_data['plan_id'],
             "start_date": validated_data['start_date'],
         }
-        if payment_response.get("payment_id") is not None:
+        if isinstance(payment_response, dict) and payment_response.get("payment_id") is not None:
             inp_data["payment_id"] = payment_response["payment_id"]
         if current_plan["validity"] > -1:
             inp_data["valid_till"] = validated_data['start_date'] + timedelta(days=current_plan["validity"] - 1)
         return TsSubscription.objects.create(**inp_data)
 
-    def response(self, instance):
+    def get_subscription_details(self):
+        """used to get an existing user
+        """
+        if self.validated_data.get("user_name") and not self.validated_data.get("date"):
+            return TsSubscription.objects.filter(
+                user__user_name=self.validated_data["user_name"], valid_till__isnull=False)
+        else:
+            return TsSubscription.objects.filter(
+                Q(user__user_name=self.validated_data["user_name"], valid_till__gte=self.validated_data["date"]) |
+                Q(user__user_name=self.validated_data["user_name"], valid_till__isnull=True)
+            ).order_by("created_at")
+
+    def response(self, instances=None):
         """
         custom deserializer for providing custom information
         """
@@ -95,3 +108,17 @@ class TsSubscriptionSerializer(slzs.Serializer):
                 "status": "SUCCESS",
                 "amount": self.validated_data["amount"]
             }
+        if self.validated_data['request_type'] == "GET":
+            if len(instances) > 1:
+                resp_list = []
+                for instance in instances:
+                    resp_list.append({
+                        "plan_id": instance.plan_id,
+                        "start_date": instance.start_date,
+                        "valid_till": instance.valid_till})
+                return resp_list
+            if len(instances) == 1:
+                return {
+                    "plan_id": instances[0].plan_id,
+                    "days_left": "Infinite" if instances[0].plan_id == "FREE" else (instances[0].valid_till - self.validated_data["date"]).days + 1
+                }

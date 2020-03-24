@@ -7,7 +7,18 @@ from .serializer import TsSubscriptionSerializer
 
 class TsSubscriptionView(APIView):
     def get(self, request, **kwargs):
-        return Response({"msg": "working"}, status=status.HTTP_200_OK)
+        request = {"request_type": 'GET'}
+        if kwargs.get("username"):
+            request["user_name"] = kwargs.get("username")
+        if kwargs.get("date"):
+            request["date"] = kwargs.get("date")
+        serialize = TsSubscriptionSerializer(data=request, partial=True)
+        serialize.is_valid(raise_exception=True)
+        try:
+            out = serialize.get_subscription_details()
+            return Response(serialize.response(out), status=status.HTTP_200_OK)
+        except Exception as err:
+            return Response({'error': str(err)}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, **kwargs):
         request = request.data
@@ -22,10 +33,4 @@ class TsSubscriptionView(APIView):
                 {"status": "FAILURE", "amount": serialize.validated_data['amount']},
                 status=status.HTTP_400_BAD_REQUEST)
         except Exception as err:
-            return Response({'error': str(err)}, status=500)
-
-    # def put(self, request, **kwargs):
-    #     return Response({"msg": "working"}, status=status.HTTP_200_OK)
-
-    # def delete(self, request, **kwargs):
-    #     return Response({"msg": "working"}, status=status.HTTP_200_OK)
+            return Response({'error': str(err)}, status=status.HTTP_400_BAD_REQUEST)
