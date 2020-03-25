@@ -9,7 +9,7 @@ services:
        MYSQL_DATABASE: 'tsdb'
        MYSQL_ROOT_PASSWORD: 'Testing.512'
   web:
-    build: ./tsproj
+    build: .
     command: bash -c "python manage.py makemigrations subscription &&  python manage.py makemigrations tsusers && python manage.py migrate && python manage.py runserver 0.0.0.0:19093"
     volumes:
       - ./tsproj:/tsproj
