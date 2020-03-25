@@ -1,6 +1,7 @@
 """Users serialzer for the project
 """
 from rest_framework import serializers as slzs
+
 from .models import TsUser
 
 

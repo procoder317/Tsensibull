@@ -1,7 +1,8 @@
-from rest_framework.views import APIView
-from rest_framework.serializers import ValidationError
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
+from rest_framework.views import APIView
+
 from .serializer import TsSubscriptionSerializer
 
 
@@ -17,8 +18,10 @@ class TsSubscriptionView(APIView):
         try:
             out = serialize.get_subscription_details()
             return Response(serialize.response(out), status=status.HTTP_200_OK)
-        except Exception as err:
-            return Response({'error': str(err)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError:
+            return Response(None, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(None, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, **kwargs):
         request = request.data
@@ -32,5 +35,5 @@ class TsSubscriptionView(APIView):
             return Response(
                 {"status": "FAILURE", "amount": serialize.validated_data['amount']},
                 status=status.HTTP_400_BAD_REQUEST)
-        except Exception as err:
-            return Response({'error': str(err)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(None, status=status.HTTP_400_BAD_REQUEST)
