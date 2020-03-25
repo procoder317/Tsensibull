@@ -14,7 +14,7 @@ from utils.common import request_choices
 
 
 class TsSubscriptionSerializer(slzs.Serializer):
-    """serializer for users
+    """serializer for subscription
     """
     user_name = slzs.CharField()
     plan_id = slzs.ChoiceField(choices=tuple(plan for plan in settings.PLAN_TABLE))
@@ -45,7 +45,7 @@ class TsSubscriptionSerializer(slzs.Serializer):
             raise slzs.ValidationError("payment failed")
 
     def create(self, validated_data):
-        """used to create a new user
+        """used to create a new subscription
         """
         current_plan = settings.PLAN_TABLE[validated_data['plan_id']]
         amount = current_plan["cost"]
@@ -97,7 +97,7 @@ class TsSubscriptionSerializer(slzs.Serializer):
             return TsSubscription.objects.filter(
                 Q(user__user_name=self.validated_data["user_name"], valid_till__gte=self.validated_data["date"]) |
                 Q(user__user_name=self.validated_data["user_name"], valid_till__isnull=True)
-            ).order_by("created_at")
+            ).order_by("-created_at")[:1]
 
     def response(self, instances=None):
         """
