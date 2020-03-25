@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = ')$&%gfn6c=&(m93%d)b#0bjx+2_-gdh-&8s*l5!17*!a0o+ao='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': 'tsdb',
         'USER': 'root',
         'PASSWORD': 'Testing.512',
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': 3306,
     }
 }
@@ -155,3 +155,5 @@ PLAN_TABLE = {
         "cost": 900.0
     }
 }
+
+PAYMENTS_URL = "https://dummy-payment-server.herokuapp.com/payment"
